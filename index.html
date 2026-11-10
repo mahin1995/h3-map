@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>H3 Airport Polygon Geofence</title>
+
+
+</head>
+<body>
+<div id="app">
+  <div id="panel">
+    <h1>এয়ারপোর্ট polygon + H3 হেক্সাগন</h1>
+
+    <div class="seg" role="group" aria-label="মোড">
+      <button id="modeDraw" class="on">১. কোণা আঁকুন</button>
+      <button id="modeCrew">২. ক্রু বসান</button>
+    </div>
+
+    <div class="btns">
+      <button id="undo">শেষ কোণা মুছুন</button>
+      <button id="clear">সব মুছুন</button>
+    </div>
+
+    <label>Resolution <span class="val" id="resVal">10</span></label>
+    <input type="range" id="res" min="7" max="13" value="10">
+
+    <label class="chk">
+      <input type="checkbox" id="edge" checked>
+      <span>সীমানার হেক্সাগনও নিন (যে হেক্সাগন polygon-এর সামান্য অংশ ছুঁয়েছে)। এতে বাদ পড়া এলাকা কমে।</span>
+    </label>
+
+    <label>বাফার (মিটার) <span class="val" id="bufVal">0</span></label>
+    <input type="range" id="buf" min="0" max="200" step="10" value="0">
+
+    <label>ক্রু লোকেশন (lat, lng)</label>
+    <div class="row">
+      <input type="number" id="uLat" step="0.0001">
+      <input type="number" id="uLng" step="0.0001">
+    </div>
+
+    <div id="status" class="idle">-</div>
+
+    <div class="stats" id="stats"></div>
+
+    <label>Python কোড (কপি করে ব্যবহার করুন)</label>
+    <textarea id="code" readonly></textarea>
+    <button id="copy">কোড কপি করুন</button>
+
+    <div class="hint">
+      <b>কোণা আঁকুন</b> মোডে ম্যাপে ক্লিক করে এয়ারপোর্টের কোণাগুলো ঘুরে ঘুরে দিন। কোণার পিন টেনে সরানো যায়, ডান-ক্লিক করলে মুছে যায়।
+      তারপর <b>ক্রু বসান</b> মোডে ক্লিক করে টেস্ট করুন। পিন টেনেও সরাতে পারবেন।
+      নীল হেক্সাগন = জোনের ভেতর। কমলা রেখা = আপনার আঁকা আসল polygon।
+    </div>
+  </div>
+  <div id="map" class="drawing"></div><div id="tileWarning" role="status" hidden>Map tiles could not load. Check your connection or configure VITE_TILE_URL. Drawing and attendance still work.</div>
+</div>
+
+
+
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
