@@ -1,72 +1,90 @@
 # H3 Airport Geofence
 
-A Node.js / Vite application based on the supplied Bengali HTML workflow. Draw an airport polygon, cover it with H3 hexagons, and place a crew member to check **Present / Absent**.
+An interactive map for drawing airport zones, covering them with H3 hexagons, and checking crew attendance by location. The Bengali interface combines polygon editing, adjustable hexagon coverage, location statistics, and Python code export.
 
-![H3 airport polygon and attendance interface](docs/screenshot.png)
+Built with **Node.js, Vite, Leaflet, and H3**.
 
-> Actual browser screenshot from this environment. The polygon, 162 H3 cells, and attendance calculation work. Background tiles were blocked by the cloud network policy, so the screenshot includes the tile warning rather than a loaded street map.
+## Project flow
 
-## Run
+1. Draw or edit the airport boundary on the map.
+2. Choose the H3 resolution, boundary-cell setting, and buffer distance.
+3. Place the crew marker or enter latitude and longitude.
+4. View **Present / Absent**, coverage statistics, and distance from the polygon boundary.
+5. Copy the generated Python code to use the current H3 zone in an attendance workflow.
 
-Requires Node.js **20.19+ or 22.12+** (tested with Node 24).
+## Airport zone and attendance overview
 
-```sh
-npm ci
-npm run dev
-```
+The project opens with a sample polygon near Dhaka airport. Orange corners define the airport boundary, blue hexagons represent the attendance zone, and the circular marker represents the crew location. A green **Present** result means the crew's H3 cell belongs to the displayed zone.
 
-Open the URL printed by Vite in your browser. Serve the app through Node/Vite; do not open `index.html` using `file://`.
+![Airport polygon, H3 coverage, crew marker, and Present result](docs/screenshot.png)
 
-```sh
-npm run build      # production assets in dist/
-npm run preview    # serve the production build
-```
+## Draw and edit a polygon
 
-The built `dist/` directory can also be hosted on a static web server. No database, backend credentials, or Python installation is required for the web app.
+Select **কোণা আঁকুন** and click the map to add corners in boundary order. Drag a corner to reposition it, or right-click a corner to remove it. The polygon and H3 coverage update as the boundary changes.
 
-## Workflow
+![Custom four-corner polygon with its H3 coverage](docs/drawing.png)
 
-1. The initial polygon surrounds a sample area near Dhaka airport.
-2. Select **কোণা আঁকুন** and click the map to add corners. Drag a corner to move it; right-click to remove it. Use Undo or Clear to edit.
-3. Adjust resolution (7–13), boundary-cell inclusion, or the approximate buffer (0–200 meters).
-4. Select **ক্রু বসান** and click the map, drag the crew marker, or enter latitude/longitude. Attendance uses membership in the displayed H3 cell set.
-5. Review cell count, approximate areas, polygon membership, and distance to its boundary. Copy the generated Python code to reproduce attendance for the current cell set with Python `h3>=4,<5`.
+### Undo the last corner
 
-The buffer expands vertices away from the polygon's mean center; it is an approximation, not an exact distance buffer. Boundary coverage retains the original neighboring-cell/vertex heuristic and is not guaranteed to include every intersecting cell for arbitrary narrow or complex polygons. High resolutions or large polygons can produce many cells and slow rendering. This is an interactive demonstration, not a validated airport attendance system.
+**শেষ কোণা মুছুন** removes the most recently added corner and recalculates the zone.
 
-## Why the original map showed “Access blocked”
+![Polygon after removing its last corner](docs/undo.png)
 
-The original HTML requested tiles from OpenStreetMap's public volunteer tile service. Those tiles can be rejected under the provider's usage/access policies, including requests without acceptable browser identification or referrer context. A Node project alone cannot override a provider's refusal.
+### Clear the zone
 
-This project bundles Leaflet and H3 locally through npm, serves the page over HTTP, and defaults to CARTO's raster basemap with attribution. It does **not** proxy or bypass OpenStreetMap's block. Use a tile provider whose terms and capacity fit your deployment.
+**সব মুছুন** removes all polygon corners and returns to drawing mode. At least three corners are required to generate a zone and check attendance.
 
-To change the provider, copy `.env.example` to `.env.local`, configure its URL and required attribution, then restart Vite (or rebuild for production):
+![Empty drawing canvas after clearing the polygon](docs/clear.png)
 
-```dotenv
-VITE_TILE_URL=https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png
-VITE_TILE_ATTRIBUTION=&copy; OpenStreetMap contributors &copy; CARTO
-```
+## Adjust H3 resolution
 
-`VITE_` variables are public browser configuration; never put private credentials in them. If a provider uses a browser token, follow its origin restrictions. Requests go directly from the browser to the configured provider.
+The resolution slider supports levels **7–13**. Higher resolutions produce smaller hexagons for finer coverage; lower resolutions produce larger hexagons. Cell count and coverage statistics update with the selected resolution.
 
-In restricted cloud environments, allow **basemaps.cartocdn.com** for the default map. During setup this destination returned a proxy 403, and the environment settings tool could not save the domain addition. Background map access therefore remains unverified here. A visible warning reports tile failures while local geometry and attendance continue to work.
+![Resolution 11 displaying smaller H3 hexagons](docs/resolution.png)
 
-## Validation
+## Include boundary cells
 
-```sh
-npm test
-```
+The boundary checkbox adds nearby cells using polygon-center and vertex checks. Turning it off uses the standard H3 polygon fill based on cell centers. This setting changes the displayed attendance zone; boundary coverage is approximate for narrow or complex shapes.
 
-The Playwright smoke test expects a running app at port 5173 and Chromium at `/usr/bin/chromium`. Override `APP_URL` and `CHROMIUM_PATH` if needed. Alternatively install Chromium with `npx playwright install chromium` and set `CHROMIUM_PATH` to that executable.
+![Polygon coverage with boundary-cell inclusion turned off](docs/boundary.png)
 
-The test verifies initial attendance, an outside location, invalid coordinates, drawing a new polygon, crew placement, clear/undo, boundary and buffer controls, Python export, and mobile layout. It writes the current screenshot to `docs/screenshot.png`. It reports loaded tile count separately; passing geometry tests do not establish basemap availability.
+## Add a buffer
 
-## Project files
+The buffer slider expands the polygon's vertices outward from their mean center by **0–200 meters**. A second orange outline shows the expanded boundary, and H3 coverage follows the buffered polygon. This is an approximate radial expansion.
 
-- `index.html`: Bengali controls and application layout.
-- `src/main.js`: Leaflet map, H3 geometry, interactions, and Python export.
-- `src/style.css`: responsive desktop/mobile styling.
-- `tests/smoke.mjs`: browser interaction checks.
-- `docs/screenshot.png`: actual application screenshot.
+![A 200-meter buffer with expanded outline and H3 coverage](docs/buffer.png)
 
-The supplied notebook uses older H3 Python v3 APIs and an external Denver CSV. Its unrelated analysis is not required by this app; the generated Python export uses H3 v4.
+## Place crew and check attendance
+
+Select **ক্রু বসান** and click the map, drag the circular crew marker, or enter latitude and longitude. Attendance uses the crew location's H3 cell:
+
+- **Present:** the cell belongs to the current zone.
+- **Absent:** the cell is outside the current zone.
+
+The statistics also show whether the crew is inside the original polygon and the approximate distance to its nearest boundary.
+
+![Crew outside the zone with an Absent result](docs/absent.png)
+
+## Coverage statistics
+
+The statistics panel displays:
+
+- Number of H3 cells and approximate area per cell.
+- Total hexagon coverage area in square kilometers.
+- Original polygon area in square kilometers.
+- Percentage difference between hexagon coverage and polygon area.
+- Crew membership in the original polygon and approximate boundary distance.
+
+These values update when the polygon, resolution, buffer, boundary setting, or crew location changes.
+
+## Export Python attendance code
+
+The code panel generates Python for the current zone, including polygon coordinates, resolution, buffer setting, boundary-cell setting, and the computed H3 cell set. Use **কোড কপি করুন** to copy it. The exported `check_attendance(lat, lng)` function returns **Present** or **Absent** using the same cell membership as the map and requires Python `h3>=4,<5`.
+
+![Generated Python code for the current attendance zone](docs/python-export.png)
+
+## Mobile layout
+
+On narrow screens, the map appears above a scrollable control panel. Polygon editing, attendance checks, settings, statistics, and Python export remain available.
+
+![Mobile map and attendance controls](docs/mobile.png)
